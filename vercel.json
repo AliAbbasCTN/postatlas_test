@@ -1,6 +1,13 @@
+
 {
   "crons": [
-    { "path": "/api/cron/monitor", "schedule": "0 * * * *" },
-    { "path": "/api/cron/finance", "schedule": "*/30 * * * *" }
+    {
+      "path": "/api/cron/monitor",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/finance",
+      "schedule": "0 4 * * *"
+    }
   ]
 }
