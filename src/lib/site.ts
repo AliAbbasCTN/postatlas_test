@@ -1,4 +1,3 @@
-// The canonical origin used in sitemaps, robots, canonical links and emails.
 
 function normalizeOrigin(raw: string): string {
   const url = new URL(raw);
@@ -30,4 +29,8 @@ export function siteUrl(): string {
   }
 
   return "http://localhost:3000";
+}
+
+export function absoluteUrl(path: string = "/"): string {
+  return new URL(path, `${siteUrl()}/`).toString();
 }
