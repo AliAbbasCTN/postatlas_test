@@ -1,28 +1,29 @@
-# Dependencies
+# dependencies
 node_modules/
 
-# Next.js build output
+# next.js
 .next/
 out/
 build/
 
-# Environment variables and secrets
+# env
 .env
-.env.*
-!.env.example
+.env.local
+.env.*.local
 
-# Miscellaneous
+# misc
 .DS_Store
 *.pem
 npm-debug.log*
-.vercel/
+.vercel
 next-env.d.ts
 
-# TypeScript build cache
-tsconfig.tsbuildinfo
+# generated
+*.tsbuildinfo
 
-# Temporary debugging files
-build-error.txt
-vercel-build-debug.txt
+# Protect all environment files; allow the safe template
+.env.*
+!.env.example
 
-tsconfig.tsbuildinfo
+# Additional generated files
+coverage/

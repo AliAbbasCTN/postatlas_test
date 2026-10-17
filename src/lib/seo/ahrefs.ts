@@ -1,10 +1,11 @@
-// Ahrefs API v3 adapter (https://docs.ahrefs.com/reference). Requires a paid Ahrefs plan with API v3 access and
-// consumes API units; the key stays on the server. Endpoints used (all under https://api.ahrefs.com/v3/site-explorer):
-//   domain-rating, backlinks-stats, refdomains-history, domain-rating-history,
-//   metrics, metrics-history, metrics-by-country, organic-keywords, top-pages, organic-competitors, refdomains.
+// Ahrefs API v3 adapter. The free public Domain Rating endpoint is used for DR;
+// Site Explorer endpoints for backlink, history, organic-traffic, and gap data may
+// require a paid Ahrefs plan and consume API units. Keep the API key server-side.
+// Free endpoint: https://api.ahrefs.com/v3/public/domain-rating-free
+// Paid endpoints: https://api.ahrefs.com/v3/site-explorer
 // Parsing is defensive: a missing or wrongly typed field becomes null/omitted, never 0.
-// NOTE: response field names were written from the published v3 reference and exercised only against fixtures in
-// tests/seo-provider.test.ts. Confirm against a live key (see docs/SEO_DATA.md) before relying on it.
+// NOTE: response field names are based on the published v3 reference and fixtures in
+// tests/seo-provider.test.ts. Confirm behavior against a live API key before relying on it.
 import type { AuthorityData, GapData, HistoryPoint, OrganicData, Section, SeoOverview, SeoOverviewProvider, UnavailableReason } from "./types.ts";
 import { unavailableOverview } from "./types.ts";
 
@@ -55,6 +56,81 @@ export function createAhrefsProvider(cfg: { apiKey: string | undefined; fetchImp
     } finally { clearTimeout(timer); }
   }
 
+
+  
+  async function callFreeDomainRating(
+    domain: string
+  ): Promise<Record<string, unknown>> {
+    if (!cfg.apiKey) {
+      throw new ProviderFailure("no_provider", "No Ahrefs API key configured.");
+    }
+
+    const params = new URLSearchParams({
+      target: domain,
+      output: "json"
+    });
+
+    const url =
+      `https://api.ahrefs.com/v3/public/domain-rating-free?${params}`;
+
+    const ctl = new AbortController();
+    const timer = setTimeout(
+      () => ctl.abort(),
+      cfg.timeoutMs ?? AHREFS_TIMEOUT_MS
+    );
+
+    try {
+      const res = await doFetch(url, {
+        headers: {
+          Authorization: `Bearer ${cfg.apiKey}`,
+          Accept: "application/json"
+        },
+        signal: ctl.signal
+      });
+
+      if (res.status === 429) {
+        throw new ProviderFailure(
+          "rate_limited",
+          "Ahrefs is rate limiting requests."
+        );
+      }
+
+      if (res.status === 401 || res.status === 403) {
+        throw new ProviderFailure(
+          "plan_or_key",
+          "Ahrefs rejected the API key."
+        );
+      }
+
+      if (!res.ok) {
+        throw new ProviderFailure(
+          "provider_error",
+          `Ahrefs returned HTTP ${res.status}.`
+        );
+      }
+
+      return rec(await res.json());
+    } catch (e) {
+      if (e instanceof ProviderFailure) throw e;
+
+      if (e instanceof Error && e.name === "AbortError") {
+        throw new ProviderFailure(
+          "timeout",
+          "Ahrefs did not respond in time."
+        );
+      }
+
+      throw new ProviderFailure(
+        "provider_error",
+        "The free Domain Rating request failed."
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+
+
   const failure = (e: unknown): Section<never> => {
     const f = e instanceof ProviderFailure ? e : new ProviderFailure("provider_error", "The data provider failed.");
     return { status: "unavailable", reason: f.reason, message: f.message };
@@ -64,7 +140,7 @@ export function createAhrefsProvider(cfg: { apiKey: string | undefined; fetchImp
     const from = isoDay(new Date(now().getTime() - 365 * 86400_000));
     try {
       const [dr, bl, rdh, drh] = await Promise.allSettled([
-        call("domain-rating", { target: domain, date: today }),
+        callFreeDomainRating(domain),
         call("backlinks-stats", { target: domain, date: today, mode: "subdomains" }),
         call("refdomains-history", { target: domain, date_from: from, history_grouping: "monthly" }),
         call("domain-rating-history", { target: domain, date_from: from, history_grouping: "monthly" })
@@ -75,7 +151,7 @@ export function createAhrefsProvider(cfg: { apiKey: string | undefined; fetchImp
       const blObj = bl.status === "fulfilled" ? rec(rec(bl.value).metrics) : {};
       const value: AuthorityData = {
         domainRating: num(drObj.domain_rating),
-        domainRatingLabel: "Domain Rating (Ahrefs)",
+        domainRatingLabel: "Domain Rating by Ahrefs",
         referringDomains: { live: num(blObj.live_refdomains), allTime: num(blObj.all_time_refdomains) },
         backlinks: { live: num(blObj.live), allTime: num(blObj.all_time) },
         refDomainsHistory: rdh.status === "fulfilled" ? mapHistory(rec(rdh.value).refdomains, "refdomains") : [],

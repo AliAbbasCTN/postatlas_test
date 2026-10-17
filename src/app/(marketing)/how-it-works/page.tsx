@@ -20,12 +20,12 @@ export default function HowItWorksPage() {
         <ol className="border-t border-ink">
           {steps.map(([title, body], i) => (
             <li key={title} className="grid grid-cols-[64px_1fr] gap-5 py-6 border-b border-line">
-              <span className="font-mono text-verdigrisdark text-lg">{String(i + 1).padStart(2, "0")}</span>
+              <span className="font-mono text-accenttext text-lg">{String(i + 1).padStart(2, "0")}</span>
               <div><h2 className="font-serif font-semibold text-xl mb-1">{title}</h2><p className="text-inksoft">{body}</p></div>
             </li>
           ))}
         </ol>
-        <p className="mt-8 text-inksoft">Not ready to order? You can <Link className="underline text-verdigrisdark" href="/signup">create an account</Link> and ask the team for advice first.</p>
+        <p className="mt-8 text-inksoft">Not ready to order? You can <Link className="underline text-accenttext" href="/signup">create an account</Link> and ask the team for advice first.</p>
       </div>
     </section>
   );

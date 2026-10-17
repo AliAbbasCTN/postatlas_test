@@ -26,8 +26,8 @@ export function LineChart({ points, label, unit = "" }: { points: HistoryPoint[]
   return (
     <figure>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${label}: from ${fmtNum(first.value)}${unit} on ${first.date} to ${fmtNum(last.value)}${unit} on ${last.date}`} className="w-full h-auto">
-        <path d={d} fill="none" stroke="currentColor" strokeWidth="2" className="text-verdigrisdark" />
-        <circle cx={x(points.length - 1)} cy={y(last.value)} r="3.5" className="fill-current text-verdigrisdark" />
+        <path d={d} fill="none" stroke="currentColor" strokeWidth="2" className="text-accenttext" />
+        <circle cx={x(points.length - 1)} cy={y(last.value)} r="3.5" className="fill-current text-accenttext" />
       </svg>
       <figcaption className="flex justify-between text-[11px] text-inksoft"><span>{first.date} · {fmtNum(first.value)}{unit}</span><span>{last.date} · {fmtNum(last.value)}{unit}</span></figcaption>
     </figure>
@@ -42,7 +42,7 @@ export function BarList({ rows }: { rows: { label: string; value: number; detail
       {rows.map((r) => (
         <li key={r.label} className="text-sm">
           <div className="flex justify-between gap-3"><span>{r.label}</span><span className="font-mono text-inksoft">{r.detail ?? fmtNum(r.value)}</span></div>
-          <div className="h-2 rounded bg-paperdim" role="presentation"><div className="h-2 rounded bg-verdigrisdark" style={{ width: `${Math.max(2, (r.value / max) * 100)}%` }} /></div>
+          <div className="h-2 rounded bg-mist" role="presentation"><div className="h-2 rounded bg-verdigrisdark" style={{ width: `${Math.max(2, (r.value / max) * 100)}%` }} /></div>
         </li>
       ))}
     </ul>

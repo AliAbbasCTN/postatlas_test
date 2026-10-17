@@ -15,6 +15,7 @@ import { runPlacementCheck } from "@/lib/services/placements";
 import { onPlacementVerified } from "@/lib/services/payouts";
 import { openRejectionCase } from "@/lib/services/recovery";
 import { canTransition } from "@/lib/order-state";
+import { formatDueUtc, formatHours } from "@/lib/order-deadline";
 import type { OrderStatus } from "@/lib/types";
 
 const idOf = (fd: FormData) => { const v = String(fd.get("order_id") ?? ""); return /^[0-9a-f-]{36}$/i.test(v) ? v : ""; };
@@ -34,9 +35,12 @@ export async function acceptOrder(formData: FormData) {
     await transitionOrder(order.id, order.status, "ACCEPTED", { id: user.id, role: "publisher" }, "Accepted by publisher");
     await logAudit({ actorId: user.id, action: "fulfillment.accepted", resourceType: "order", resourceId: order.id });
     const parties = await orderParties(order.id);
-    if (parties) await notifyMany(parties.customerUserIds, "order.accepted", { order_id: order.id }, { subject: "The publisher accepted your order", body: "Your placement is now in the publisher's queue.", path: `/dashboard/orders/${order.id}` });
+    // The database started the delivery clock inside the same transition; read the deadline it set.
+    const { data: clock } = await createAdminClient().from("orders").select("due_at, turnaround_hours").eq("id", order.id).maybeSingle();
+    const dueText = clock?.due_at ? formatDueUtc(clock.due_at) : null;
+    if (parties) await notifyMany(parties.customerUserIds, "order.accepted", { order_id: order.id, due_at: clock?.due_at ?? null }, { subject: "The publisher accepted your order", body: dueText ? `Your placement is now in the publisher's queue. It is due by ${dueText} (${formatHours(clock!.turnaround_hours ?? 0)} from acceptance). If it is not delivered by then you can ask for a refund or an alternative placement.` : "Your placement is now in the publisher's queue.", path: `/dashboard/orders/${order.id}` });
     revalidatePath(back);
-    redirect(back);
+    redirect(dueText ? `${back}?notice=${encodeURIComponent(`Order accepted. Please deliver by ${dueText}.`)}` : back);
   });
 }
 

@@ -38,7 +38,7 @@ export default async function NewAdvice({ searchParams }: { searchParams: Promis
       <FormFeedback error={sp.error} />
       <form action={startAdvice} className="card grid gap-4">
         {Object.entries(hidden).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-        {ctx.length > 0 && <div className="text-sm bg-paperdim rounded p-3"><b>We will include:</b><ul className="list-disc pl-5">{ctx.map((c) => <li key={c}>{c}</li>)}</ul></div>}
+        {ctx.length > 0 && <div className="text-sm bg-mist rounded p-3"><b>We will include:</b><ul className="list-disc pl-5">{ctx.map((c) => <li key={c}>{c}</li>)}</ul></div>}
         <div><label className="label" htmlFor="subject">Subject (optional)</label><input id="subject" name="subject" maxLength={140} className="input" /></div>
         <div><label className="label" htmlFor="body">Your question</label><textarea id="body" name="body" required minLength={5} maxLength={4000} rows={6} className="input" /></div>
         <p className="text-xs text-inksoft">You will get the answer here, and we will email you a notice when we reply.</p>

@@ -9,8 +9,9 @@ import { logAudit } from "@/lib/audit";
 import { text, uuid, optionalUuid, oneOf } from "@/lib/validation";
 import { validatePublicHttpUrl } from "@/lib/url-safety";
 import { rateLimit, LIMITS } from "@/lib/rate-limit";
-import { transitionOrder, loadOrderFor } from "@/lib/services/orders";
-import { notifyStaff } from "@/lib/services/notify";
+import { transitionOrder, loadOrderFor, orderParties } from "@/lib/services/orders";
+import { notifyStaff, notifyMany } from "@/lib/services/notify";
+import { EXPIRY_CHOICES, canRequestExpiryRemedy } from "@/lib/order-deadline";
 import { lockCheckout } from "@/lib/services/finance";
 import type { Currency } from "@/lib/money";
 
@@ -103,5 +104,41 @@ export async function requestReplacement(formData: FormData) {
     await logAudit({ actorId: user.id, organizationId: order.organization_id, action: "order.replacement_requested", resourceType: "order", resourceId: order.id });
     revalidatePath(`/dashboard/orders/${order.id}`);
     redirect(`/dashboard/orders/${order.id}?notice=${encodeURIComponent("Replacement requested. Our team will follow up.")}`);
+  });
+}
+
+// The publisher did not deliver by the deadline. The paying customer chooses a refund or an alternative placement. This does
+// NOT refund anything: it closes the order out of the publisher's hands, opens a recovery case for the admin queue and (for a
+// refund) files a refund REQUEST that follows the normal manual refund workflow. The database re-checks membership, payment,
+// status and the deadline itself (request_expiry_remedy), so a forged request cannot skip the wait.
+const REMEDY_ERRORS: [RegExp, string][] = [
+  [/not past its delivery deadline|order state changed/i, "This order is no longer waiting on the publisher, so there is nothing to choose. Refresh the page to see where it stands."],
+  [/no confirmed payment/i, "There is no confirmed payment on this order, so there is nothing to refund."],
+  [/role in this workspace/i, "Your role in this workspace does not allow that action."]
+];
+export async function resolveExpiredOrder(formData: FormData) {
+  const raw = String(formData.get("order_id") ?? "");
+  return withRedirect(`/dashboard/orders/${/^[0-9a-f-]{36}$/i.test(raw) ? raw : ""}`, async () => {
+    const { user } = await actionSession();
+    await rateLimit(`expiry:${user.id}`, LIMITS.expiry.window, LIMITS.expiry.max);
+    const id = uuid(formData, "order_id");
+    const choice = oneOf(formData, "choice", "Your choice", EXPIRY_CHOICES);
+    const note = text(formData, "note", "Note", { max: 500, optional: true, multiline: true });
+    const order = await loadOrderFor(id, { kind: "member", userId: user.id, cap: "manageOrders" });
+    if (!order) throw new ActionError("Order not found.");
+    if (!canRequestExpiryRemedy({ status: order.status, due_at: order.due_at })) throw new ActionError("This order is not past its delivery deadline yet.");
+
+    const { error } = await createAdminClient().rpc("request_expiry_remedy", { p_order: order.id, p_actor: user.id, p_choice: choice, p_note: note || null });
+    if (error) {
+      const known = REMEDY_ERRORS.find(([re]) => re.test(error.message));
+      if (!known) console.error("[resolveExpiredOrder]", error.message);
+      throw new ActionError(known ? known[1] : "Could not record your choice. Please try again.");
+    }
+    await logAudit({ actorId: user.id, organizationId: order.organization_id, action: "order.expiry_remedy", resourceType: "order", resourceId: order.id, metadata: { choice } });
+    const parties = await orderParties(order.id);
+    if (parties?.publisherUserId) await notifyMany([parties.publisherUserId], "order.closed_after_deadline", { order_id: order.id }, { subject: "An order was closed after its deadline", body: "The delivery deadline passed and the customer chose a " + (choice === "refund" ? "refund" : "different publisher") + ". The order is closed for you and no payout is due.", path: `/publisher/orders/${order.id}` });
+    await notifyStaff(choice === "refund" ? "Refund requested: missed delivery deadline" : "Alternative placement requested: missed delivery deadline", `Order ${order.id}: the publisher missed the deadline and the customer chose ${choice === "refund" ? "a refund" : "an alternative placement"}.`, choice === "refund" ? "/admin/refunds" : "/admin/recovery");
+    revalidatePath(`/dashboard/orders/${order.id}`); revalidatePath("/dashboard/orders");
+    redirect(`/dashboard/orders/${order.id}?notice=${encodeURIComponent(choice === "refund" ? "Refund requested. Our team will review it and update you here. Nothing is refunded until it is approved and transferred." : "Alternative placement requested. Our team will arrange another publisher on the same terms, or refund you if that is not possible.")}`);
   });
 }

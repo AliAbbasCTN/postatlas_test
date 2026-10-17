@@ -14,8 +14,8 @@ export default async function UpdatePasswordPage({ searchParams }: { searchParam
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-paper px-6">
-      <div className="w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center bg-paperdim px-4 py-10">
+      <div className="w-full max-w-sm rounded-lg border border-line bg-white p-6 shadow-card sm:p-8">
         <Link href="/" className="flex items-center gap-2 font-serif font-bold text-xl mb-8">
           <BrandMark size={28} /> PostAtlas
         </Link>
@@ -26,7 +26,7 @@ export default async function UpdatePasswordPage({ searchParams }: { searchParam
             <label htmlFor="password" className="block text-sm mb-1.5">New password</label>
             <input id="password" autoComplete="new-password" type="password" name="password" required minLength={10} maxLength={128} className="w-full border border-line rounded px-3 py-2.5 text-sm" />
           </div>
-          <button type="submit" className="w-full py-2.5 bg-ink text-paper rounded text-sm">Update Password</button>
+          <button type="submit" className="btn-primary w-full">Update Password</button>
         </form>
       </div>
     </div>

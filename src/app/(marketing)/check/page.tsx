@@ -22,7 +22,7 @@ export default async function CheckPage({ searchParams }: { searchParams: Promis
             <li key={t} className="rounded-lg border border-line bg-white p-4"><strong className="block font-serif text-base mb-1">{t}</strong><span className="text-inksoft">{b}</span></li>
           ))}
         </ul>
-        <p className="mt-8 text-sm text-inksoft">Want to talk it through first? <Link className="underline text-verdigrisdark" href="/contact">Contact the team</Link>.</p>
+        <p className="mt-8 text-sm text-inksoft">Want to talk it through first? <Link className="underline text-accenttext" href="/contact">Contact the team</Link>.</p>
       </div>
     </section>
   );

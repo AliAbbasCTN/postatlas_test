@@ -23,8 +23,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-paper px-6">
-      <div className="w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center bg-paperdim px-4 py-10">
+      <div className="w-full max-w-sm rounded-lg border border-line bg-white p-6 shadow-card sm:p-8">
         <Link href="/" className="flex items-center gap-2 font-serif font-bold text-xl mb-8"><BrandMark size={28} /> PostAtlas</Link>
         <h1 className="font-serif font-bold text-2xl mb-6">Log in to your account</h1>
         <FormFeedback error={sp.error} />
@@ -32,10 +32,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <input type="hidden" name="next" value={next} />
           <div className="mb-4"><label htmlFor="email" className="label">Email</label><input id="email" type="email" name="email" required autoComplete="email" className="input" /></div>
           <div className="mb-2"><label htmlFor="password" className="label">Password</label><input id="password" type="password" name="password" required autoComplete="current-password" className="input" /></div>
-          <div className="mb-5 text-right"><Link href="/reset-password" className="text-sm text-verdigrisdark">Forgot password?</Link></div>
+          <div className="mb-5 text-right"><Link href="/reset-password" className="text-sm text-accenttext">Forgot password?</Link></div>
           <SubmitButton pendingText="Signing in..." className="btn-primary w-full">Log in</SubmitButton>
         </form>
-        <p className="mt-6 text-sm text-inksoft">No account yet? <Link href={`/signup?next=${encodeURIComponent(next)}`} className="text-verdigrisdark">Create one</Link></p>
+        <p className="mt-6 text-sm text-inksoft">No account yet? <Link href={`/signup?next=${encodeURIComponent(next)}`} className="text-accenttext">Create one</Link></p>
       </div>
     </div>
   );

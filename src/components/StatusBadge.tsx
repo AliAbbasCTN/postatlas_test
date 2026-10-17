@@ -8,5 +8,5 @@ const BAD = ["ISSUE_DETECTED", "ISSUE", "DISPUTED", "PUBLISHER_REJECTED", "CANCE
 export function StatusBadge({ status, label }: { status: string; label?: string }) {
   const cls = GOOD.includes(status) ? "status-verified" : BAD.includes(status) ? "status-removed" : WARN.includes(status) ? "status-changed" : "status-review";
   const text = label ?? ORDER_STATUS_LABEL[status as OrderStatus] ?? status.replace(/_/g, " ").toLowerCase().replace(/^./, (c) => c.toUpperCase());
-  return <span className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${cls}`}>{text}</span>;
+  return <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${cls}`}>{text}</span>;
 }

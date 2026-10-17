@@ -5,7 +5,7 @@ export default function AboutPage() {
   return (
     <section className="py-14">
       <div className="max-w-[1180px] mx-auto px-6">
-        <div className="text-sm text-verdigrisdark mb-3">About</div>
+        <div className="text-sm text-accenttext mb-3">About</div>
         <h1 className="font-serif font-bold text-4xl mb-4 max-w-[32ch]">Built for people who have to prove a link is real</h1>
         <p className="text-inksoft max-w-[64ch] mb-10">PostAtlas started from a simple frustration: link building reports that show a spreadsheet of URLs, with no way to know which ones are still live six months later. We built a platform that keeps checking after the invoice is paid.</p>
         <div className="grid md:grid-cols-2 gap-10">

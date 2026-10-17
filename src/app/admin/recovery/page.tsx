@@ -8,7 +8,7 @@ import { formatUsd } from "@/lib/money";
 import Link from "next/link";
 
 export const metadata = { title: "Recovery cases" };
-const LABEL: Record<string, string> = { publisher_rejection: "Publisher declined a paid order", link_restoration: "Verified link disappeared" };
+const LABEL: Record<string, string> = { publisher_rejection: "Publisher declined a paid order", link_restoration: "Verified link disappeared", publisher_timeout: "Publisher missed the delivery deadline" };
 
 export default async function AdminRecovery({ searchParams }: { searchParams: Promise<{ error?: string; done?: string }> }) {
   const sp = await searchParams;
@@ -19,7 +19,7 @@ export default async function AdminRecovery({ searchParams }: { searchParams: Pr
   const withCandidates = await Promise.all(cases.map(async (c) => ({ c, cands: c.status === "REASSIGNED" ? [] : await findReplacementCandidates(c.order_id) })));
   return (
     <div>
-      <PageHeader title="Recovery cases" subtitle="Paid orders a publisher declined, and verified links that disappeared. The customer is never charged again and the original publisher is never paid more." />
+      <PageHeader title="Recovery cases" subtitle="Paid orders a publisher declined or failed to deliver on time, and verified links that disappeared. The customer is never charged again and the original publisher is never paid more." />
       <FormFeedback error={sp.error} success={sp.done ? "Saved." : undefined} />
       {cases.length === 0 ? <EmptyState title="No open recovery cases" /> : (
         <ul className="grid gap-4">{withCandidates.map(({ c, cands }) => { const o = Array.isArray(c.orders) ? c.orders[0] : c.orders; return (

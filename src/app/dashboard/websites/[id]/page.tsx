@@ -43,7 +43,7 @@ export default async function WebsiteDetail({ params, searchParams }: { params: 
               <div><div className="text-xs text-inksoft">Link data</div>{audit.link_data_status === "ok" ? "Available" : "Not connected"}</div>
             </div>
             {audit.link_data_status !== "ok" && (
-              <p className="mt-3 text-inksoft">We could not measure how many websites link to each page, because no link-data source is connected. We will not guess. You can still choose any page below to strengthen, or <Link className="underline text-verdigrisdark" href={`/dashboard/advice/new?website_id=${site.id}`}>ask us for advice</Link>.</p>
+              <p className="mt-3 text-inksoft">We could not measure how many websites link to each page, because no link-data source is connected. We will not guess. You can still choose any page below to strengthen, or <Link className="underline text-accenttext" href={`/dashboard/advice/new?website_id=${site.id}`}>ask us for advice</Link>.</p>
             )}
             {audit.status === "FAILED" && <p className="mt-3 text-redsig">The last analysis did not finish. Please try again.</p>}
           </div>

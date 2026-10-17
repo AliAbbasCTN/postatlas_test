@@ -25,7 +25,7 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
 
   return (
     <div>
-      <h1 className="font-serif font-bold text-3xl mb-8">Platform settings</h1>
+      <h1 className="text-2xl font-semibold tracking-tight mb-8">Platform settings</h1>
       <FormFeedback error={sp.error} success={sp.done ? "Saved." : undefined} />
 
       <h2 className="font-serif font-semibold text-xl mb-4">Payment methods</h2>
@@ -36,7 +36,7 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
       <form action={createAction} className="border border-line rounded-md p-6 mb-8 grid md:grid-cols-3 gap-4 items-end">
         <div><label className="block text-sm mb-1.5">Name</label><input name="name" required placeholder="Bank Transfer" className="w-full border border-line rounded px-3 py-2.5 text-sm" /></div>
         <div><label className="block text-sm mb-1.5">Account identifier</label><input name="account_identifier" required placeholder="IBAN / account number" className="w-full border border-line rounded px-3 py-2.5 text-sm" /></div>
-        <button className="px-5 py-2.5 bg-ink text-paper rounded text-sm" type="submit">Add Method</button>
+        <button className="btn-primary" type="submit">Add Method</button>
         <div className="md:col-span-3"><label className="block text-sm mb-1.5">Instructions shown to customers</label><textarea name="instructions" rows={2} className="w-full border border-line rounded px-3 py-2.5 text-sm" /></div>
       </form>
 
@@ -53,7 +53,7 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
               <form action={toggleAction}>
                 <input type="hidden" name="method_id" value={m.id} />
                 <input type="hidden" name="enabled" value={String(m.enabled)} />
-                <button className={`px-3 py-1.5 border rounded text-sm ${m.enabled ? "border-verdigris text-verdigrisdark" : "border-line text-inksoft"}`} type="submit">
+                <button className={`px-3 py-1.5 border rounded text-sm ${m.enabled ? "border-verdigris text-accenttext" : "border-line text-inksoft"}`} type="submit">
                   {m.enabled ? "Enabled" : "Disabled"}
                 </button>
               </form>

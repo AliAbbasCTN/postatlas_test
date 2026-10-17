@@ -28,8 +28,8 @@ export default async function AdminArticlesPage({ searchParams }: { searchParams
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
-        <h1 className="font-serif font-bold text-3xl">Article CMS</h1>
-        <Link href="/admin/articles/new" className="px-4 py-2 bg-ink text-paper rounded text-sm">New Draft</Link>
+        <h1 className="text-2xl font-semibold tracking-tight">Article CMS</h1>
+        <Link href="/admin/articles/new" className="btn-primary">New Draft</Link>
       </div>
       <FormFeedback error={sp.error} success={sp.done ? "Article updated." : undefined} />
 
@@ -49,7 +49,7 @@ export default async function AdminArticlesPage({ searchParams }: { searchParams
               {a.status === "PUBLISHED" ? (
                 <form action={unpublishAction}><input type="hidden" name="article_id" value={a.id} /><button className="px-3 py-1.5 border border-line rounded text-sm" type="submit">Unpublish</button></form>
               ) : (
-                <form action={publishAction}><input type="hidden" name="article_id" value={a.id} /><button className="px-3 py-1.5 border border-verdigris text-verdigrisdark rounded text-sm" type="submit">Publish</button></form>
+                <form action={publishAction}><input type="hidden" name="article_id" value={a.id} /><button className="px-3 py-1.5 border border-verdigris text-accenttext rounded text-sm" type="submit">Publish</button></form>
               )}
             </div>
           ))}

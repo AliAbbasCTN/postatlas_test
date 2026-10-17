@@ -3,7 +3,7 @@ export function FormFeedback({ error, success }: { error?: string; success?: str
   return (
     <div
       role={error ? "alert" : "status"}
-      className={`mb-6 border rounded-md p-4 text-sm ${error ? "border-redsig bg-[#F4E1DC] text-redsig" : "border-verdigris bg-[#E4EEEA] text-verdigrisdark"}`}
+      className={`mb-6 border rounded-md p-4 text-sm ${error ? "border-redsig bg-[#F4E1DC] text-redsig" : "border-verdigris bg-[#E4EEEA] text-accenttext"}`}
     >
       {error || success}
     </div>

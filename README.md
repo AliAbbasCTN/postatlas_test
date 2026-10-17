@@ -17,6 +17,8 @@ Next.js (App Router) + Supabase. Customers buy as **individuals with no setup** 
 6. Schedule monitoring: `vercel.json` calls `/api/cron/monitor` hourly with `Authorization: Bearer $CRON_SECRET`. On other hosts, call that URL on a schedule.
 7. `npm run dev`
 
+Design system and UI notes: `docs/FRONTEND_REDESIGN.md`. Login/signup error handling: `src/lib/auth-errors.ts` (optional rate-limiter SQL patch: `supabase/PostAtlas_patch_auth_rate_limit.sql`).
+
 Scripts: `npm test` (unit tests, no install needed beyond Node 22.18+), `npm run typecheck`, `npm run build`.
 
 **Already installed the fresh schema before the public website check was added?** Run `supabase/PostAtlas_addon_site_checks.sql` once. New installs get the `site_checks` table from the fresh schema file and must NOT run the add-on.
@@ -25,8 +27,8 @@ Scripts: `npm test` (unit tests, no install needed beyond Node 22.18+), `npm run
 
 | Area | Where |
 | --- | --- |
-| Customer: Home, Websites, Opportunities, Publishers, Orders, Placements, Monitoring, Settings, Ask for advice | `/dashboard/*` |
-| Publisher: orders, fulfilment, listings | `/publisher/*` (apply at `/apply-publisher`) |
+| Customer workspace: Overview, My Websites, Find Link Opportunities, Find Publishers, Manage Orders, Track Placements, Monitor Backlinks, Account Settings, Get Advice | `/dashboard/*` |
+| Publisher (a verified account that lists websites and receives orders): Manage Orders, Manage Listings, Track Payouts | `/publisher/*` (explained at `/for-publishers`, apply at `/apply-publisher`). Blog contributions are separate: `/write-for-us` |
 | Admin: orders, payments, publishers, disputes, advice, users, audit log | `/admin/*` |
 | Public: homepage, free website check (`/check`, no account), report (`/check/<id>`), marketplace, publisher pages, resources | `/`, `/check`, `/publishers`, `/blog` ... |
 | Sign-in is needed only to order, ask for advice, or use the dashboard | `/dashboard/start` continues an order from a report |
@@ -63,3 +65,5 @@ See `docs/IMPLEMENTATION_REPORT.md` (account model, order journey, tests, limita
 **Marketplace finance upgrade** (USD pricing + 2% commission, USD/PKR checkout, payouts, recovery, refunds): after the individual-customers upgrade, run `supabase/PostAtlas_upgrade_marketplace_finance.sql` once on an existing database (new installs already include it). Details, policies and remaining manual steps: `docs/FINANCE.md`.
 
 **Payout hardening** (replacement-publisher budget cap and fixed pay, idempotent payout creation, atomic payout-destination replacement): after the finance upgrade, run `supabase/PostAtlas_upgrade_payout_hardening.sql` (idempotent). New installs already include it. **Required environment:** `PAYOUT_DATA_KEY` must be exactly 32 random bytes in base64 (the placeholder in `.env.example` is rejected on purpose and publishers will see payout settings as unavailable until it is set); `/admin` shows a setup banner for anything required that is missing. `npm test` needs Node 22.18+ (it runs TypeScript directly) and includes database tests that execute the real schema in an in-process PostgreSQL (PGlite).
+
+**Reviews, delivery deadlines and expired-order options**: run `supabase/PostAtlas_upgrade_reviews_deadlines.sql` once on an existing database (idempotent; new installs already include it). Behaviour, assumptions and what still needs a human (legal review): `docs/REVIEWS_AND_DEADLINES.md`.

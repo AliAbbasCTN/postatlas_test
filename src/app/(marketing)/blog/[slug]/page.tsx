@@ -39,7 +39,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           {/* Plain text, never HTML: React escapes it, so stored content cannot inject markup. */}
           <div className="whitespace-pre-wrap leading-relaxed text-inksoft break-words">{post.content}</div>
         </article>
-        <p className="mt-10 text-sm"><Link className="underline text-verdigrisdark" href="/authority-audit">See how PostAtlas finds the pages that need links</Link></p>
+        <p className="mt-10 text-sm"><Link className="underline text-accenttext" href="/authority-audit">See how PostAtlas finds the pages that need links</Link></p>
       </div>
     </section>
   );

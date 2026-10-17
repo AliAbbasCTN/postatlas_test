@@ -41,7 +41,7 @@ redirect("/signup?check=1");
 
 }
 
-return ( <div className="min-h-screen flex items-center justify-center bg-paper px-6 py-12"> <div className="w-full max-w-sm"> <Link
+return ( <div className="flex min-h-screen items-center justify-center bg-paperdim px-4 py-10"> <div className="w-full max-w-sm rounded-lg border border-line bg-white p-6 shadow-card sm:p-8"> <Link
        href="/"
        className="flex items-center gap-2 font-serif font-bold text-xl mb-8"
      > <BrandMark size={28} />
@@ -126,7 +126,7 @@ PostAtlas </Link>
       Already have an account?{" "}
       <Link
         href={`/login?next=${encodeURIComponent(next)}`}
-        className="text-verdigrisdark"
+        className="text-accenttext"
       >
         Log in
       </Link>

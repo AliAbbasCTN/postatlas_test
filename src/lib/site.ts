@@ -1,36 +1,14 @@
-
-function normalizeOrigin(raw: string): string {
-  const url = new URL(raw);
-
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    throw new Error("SITE_URL must use HTTP or HTTPS.");
-  }
-
-  return url.origin;
-}
-
+// The canonical origin used in sitemaps, robots, canonical links and emails.
+// In production SITE_URL must be set; we never fall back to localhost there.
 export function siteUrl(): string {
-  const configured = process.env.SITE_URL?.trim();
-
-  if (configured) {
-    return normalizeOrigin(configured);
-  }
-
-  const vercelUrl = process.env.VERCEL_URL?.trim();
-
-  if (process.env.VERCEL && vercelUrl) {
-    return normalizeOrigin(`https://${vercelUrl}`);
-  }
-
+  const raw = process.env.SITE_URL?.trim();
+  if (raw) return raw.replace(/\/+$/, "");
   if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "SITE_URL is missing. Set SITE_URL or deploy with VERCEL_URL."
-    );
+    throw new Error("SITE_URL must be set in production (e.g. https://postatlas.example).");
   }
-
   return "http://localhost:3000";
 }
 
-export function absoluteUrl(path: string = "/"): string {
-  return new URL(path, `${siteUrl()}/`).toString();
+export function absoluteUrl(path: string): string {
+  return `${siteUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 }

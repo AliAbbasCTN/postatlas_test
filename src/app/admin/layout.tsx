@@ -7,18 +7,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const s = await requireAdmin();
   const nav = [
     { href: "/admin", label: "Overview" },
-    { href: "/admin/orders", label: "Orders" },
-    { href: "/admin/payments", label: "Payments" },
-    { href: "/admin/publishers", label: "Publishers" },
-    { href: "/admin/disputes", label: "Disputes" },
+    { href: "/admin/orders", label: "Manage Orders" },
+    { href: "/admin/payments", label: "Review Payments" },
+    { href: "/admin/publishers", label: "Manage Publishers" },
+    { href: "/admin/disputes", label: "Resolve Disputes" },
     { href: "/admin/recovery", label: "Recovery cases" },
     { href: "/admin/payouts", label: "Publisher payouts" },
-    { href: "/admin/refunds", label: "Refunds" },
+    { href: "/admin/refunds", label: "Process Refunds" },
+    { href: "/admin/reviews", label: "Moderate Reviews" },
     { href: "/admin/finance", label: "Finance settings" },
     { href: "/admin/advice", label: "Advice requests" },
-    { href: "/admin/users", label: "Users" },
+    { href: "/admin/users", label: "Manage Users" },
     { href: "/admin/audit-log", label: "Audit log" },
     ...(s.platformRole === "super_admin" ? [{ href: "/admin/articles", label: "Blog" }, { href: "/admin/settings", label: "Payment settings" }] : [])
   ];
-  return <AppShell dark area="Admin" orgName={s.platformRole === "super_admin" ? "Super admin" : "Admin"} nav={nav} extra={[{ href: "/dashboard", label: "Customer area" }]}>{children}</AppShell>;
+  return <AppShell dark area="Admin" orgName={s.platformRole === "super_admin" ? "Super admin" : "Admin"} nav={nav} extra={[{ href: "/dashboard", label: "Switch to Customer Dashboard" }]}>{children}</AppShell>;
 }

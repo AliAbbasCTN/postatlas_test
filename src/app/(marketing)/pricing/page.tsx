@@ -14,7 +14,7 @@ export default function PricingPage() {
             <div key={t} className="card"><h2 className="font-serif font-semibold text-xl mb-2">{t}</h2><p className="text-inksoft text-sm">{b}</p></div>
           ))}
         </div>
-        <p className="mt-8 text-sm text-inksoft">Payment is manual: you receive instructions on your order and a team member approves it. See the <Link className="underline text-verdigrisdark" href="/refund-policy">refund policy</Link>.</p>
+        <p className="mt-8 text-sm text-inksoft">Payment is manual: you receive instructions on your order and a team member approves it. See the <Link className="underline text-accenttext" href="/refund-policy">refund policy</Link>.</p>
       </div>
     </section>
   );

@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { customerNextAction } from "@/lib/order-state";
 import type { OrderStatus } from "@/lib/types";
 
-export const metadata = { title: "Home" };
+export const metadata = { title: "Overview" };
 
 export default async function DashboardHome({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const sp = await searchParams;
@@ -41,14 +41,24 @@ export default async function DashboardHome({ searchParams }: { searchParams: Pr
   const active = orderRows.filter((o) => !["COMPLETED", "CANCELLED", "PUBLISHER_REJECTED"].includes(o.status)).slice(0, 5);
   return (
     <div>
-      <h1 className="font-serif font-bold text-3xl mb-6">Home</h1>
+      <h1 className="mb-6 text-2xl font-semibold tracking-tight">Overview</h1>
       <FormFeedback error={sp.error} />
       <NextStep {...step} />
       {(threads.data ?? []).length > 0 && (
         <div className="card mb-8">
           <strong className="font-serif">You have a new response from PostAtlas</strong>
-          <ul className="mt-2 text-sm">{(threads.data ?? []).map((t: any) => <li key={t.id}><Link className="text-verdigrisdark underline" href={`/dashboard/advice/${t.id}`}>{t.subject}</Link></li>)}</ul>
+          <ul className="mt-2 text-sm">{(threads.data ?? []).map((t: any) => <li key={t.id}><Link className="text-accenttext underline" href={`/dashboard/advice/${t.id}`}>{t.subject}</Link></li>)}</ul>
         </div>
+      )}
+      {orderRows.length === 0 && (
+        <section aria-labelledby="how-it-works" className="card mb-8">
+          <h2 id="how-it-works" className="mb-3 text-base font-semibold">How PostAtlas works</h2>
+          <ol className="grid gap-2 text-sm text-inksoft">
+            <li><strong className="text-ink">1. Add your website.</strong> We read your public pages and show which ones are worth strengthening.</li>
+            <li><strong className="text-ink">2. Pick a page.</strong> See relevant publishers and why each one was suggested.</li>
+            <li><strong className="text-ink">3. Order a placement.</strong> Pay by manual transfer and send your article. We verify the link and keep monitoring it.</li>
+          </ol>
+        </section>
       )}
       <section aria-labelledby="active-orders">
         <h2 id="active-orders" className="font-serif font-semibold text-xl mb-3">In progress</h2>
@@ -67,7 +77,7 @@ export default async function DashboardHome({ searchParams }: { searchParams: Pr
           </ul>
         )}
       </section>
-      <p className="mt-8 text-sm text-inksoft">Not sure what to do? <Link href="/dashboard/advice/new" className="text-verdigrisdark underline">Ask for advice</Link> - no order needed.</p>
+      <p className="mt-8 text-sm text-inksoft">Not sure what to do? <Link href="/dashboard/advice/new" className="text-accenttext underline">Ask for advice</Link> - no order needed.</p>
     </div>
   );
 }

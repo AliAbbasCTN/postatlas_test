@@ -20,7 +20,7 @@ export default async function BlogIndexPage({ searchParams }: { searchParams: Pr
     <section className="py-14">
       <div className="max-w-[1000px] mx-auto px-6">
         <h1 className="font-serif font-bold text-4xl mb-10 max-w-[40ch]">Resources on link building, verification and publisher work</h1>
-        {(!posts || posts.length === 0) && <div className="border border-dashed border-line rounded-md p-8 text-inksoft"><strong className="block font-serif text-ink text-lg mb-1.5">No articles yet</strong>Articles will appear here once they are published. In the meantime, see <Link className="underline text-verdigrisdark" href="/how-it-works">how PostAtlas works</Link>.</div>}
+        {(!posts || posts.length === 0) && <div className="border border-dashed border-line rounded-md p-8 text-inksoft"><strong className="block font-serif text-ink text-lg mb-1.5">No articles yet</strong>Articles will appear here once they are published. In the meantime, see <Link className="underline text-accenttext" href="/how-it-works">how PostAtlas works</Link>.</div>}
         {posts?.map((p: any) => (
           <article key={p.id} className="grid sm:grid-cols-[140px_1fr] gap-2 sm:gap-6 py-6 border-b border-line">
             <time dateTime={p.published_at ?? undefined} className="font-mono text-xs text-inksoft">{p.published_at ? new Date(p.published_at).toLocaleDateString("en-US") : ""}</time>

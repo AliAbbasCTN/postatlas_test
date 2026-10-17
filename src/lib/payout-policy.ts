@@ -3,6 +3,7 @@
 export const PAYOUT_PROCESSING_HOURS = 12;          // target to INITIATE processing after automatic verification. Not a bank settlement promise.
 export const RESTORATION_DEADLINE_HOURS = 72;       // original publisher's time to restore a missing link (override with RESTORE_DEADLINE_HOURS)
 export const REJECTION_RECOVERY_HOURS = 48;         // time for admins to reassign or refund after a publisher declines a paid order
+export const TIMEOUT_RECOVERY_HOURS = 48;           // same window after the customer closes out an order whose delivery deadline passed (mirrors request_expiry_remedy())
 
 export const processByFor = (verifiedAtIso: string) => new Date(Date.parse(verifiedAtIso) + PAYOUT_PROCESSING_HOURS * 3600_000).toISOString();
 

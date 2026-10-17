@@ -48,7 +48,7 @@ export async function loadOrderFor(
   const db = createAdminClient();
   const { data: order } = await db
     .from("orders")
-    .select("id, organization_id, website_id, customer_website_id, opportunity_id, order_type, target_url, anchor_text, customer_price, status, created_by, created_at, publisher_websites(id, domain, link_type, publisher_id, publisher_profiles(user_id))")
+    .select("id, organization_id, website_id, customer_website_id, opportunity_id, order_type, target_url, anchor_text, customer_price, status, created_by, created_at, turnaround_hours, accepted_at, due_at, expiry_choice, publisher_websites(id, domain, link_type, publisher_id, publisher_profiles(user_id))")
     .eq("id", orderId).maybeSingle();
   if (!order) return null;
   if (scope.kind === "member") {

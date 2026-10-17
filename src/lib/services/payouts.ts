@@ -31,11 +31,11 @@ export async function onPlacementVerified(orderId: string, verifiedAtIso: string
   }
 }
 
-export type FinanceRunSummary = { fxOk: boolean; obligationsCreated: number; started: number; overdueAlerts: number; escalated: number; missedChecks: number };
+export type FinanceRunSummary = { fxOk: boolean; obligationsCreated: number; started: number; overdueAlerts: number; escalated: number; missedChecks: number; deadlinesMissed: number };
 
 export async function runFinanceJobs(): Promise<FinanceRunSummary> {
   const db = createAdminClient();
-  const summary: FinanceRunSummary = { fxOk: true, obligationsCreated: 0, started: 0, overdueAlerts: 0, escalated: 0, missedChecks: 0 };
+  const summary: FinanceRunSummary = { fxOk: true, obligationsCreated: 0, started: 0, overdueAlerts: 0, escalated: 0, missedChecks: 0, deadlinesMissed: 0 };
 
   // 1. exchange rate (refreshes only when the stored one is older than 12 hours)
   try { const { getUsdPkr } = await import("@/lib/services/fx"); summary.fxOk = (await getUsdPkr({ refresh: true })) !== null; } catch { summary.fxOk = false; }
@@ -76,8 +76,11 @@ export async function runFinanceJobs(): Promise<FinanceRunSummary> {
   const { data: late } = await db.from("recovery_cases").select("id, order_id, kind").eq("status", "OPEN").lt("deadline_at", new Date().toISOString()).limit(50);
   for (const c of late ?? []) {
     const { data: ok } = await db.rpc("escalate_recovery_case", { p_case: c.id, p_actor: null, p_reason: "Deadline passed without resolution" });
-    if (ok) { summary.escalated++; await notifyStaff("Recovery case escalated", `A ${c.kind === "link_restoration" ? "link restoration" : "publisher rejection"} case passed its deadline.`, "/admin/recovery"); }
+    if (ok) { summary.escalated++; await notifyStaff("Recovery case escalated", `A ${c.kind === "link_restoration" ? "link restoration" : c.kind === "publisher_timeout" ? "missed delivery deadline" : "publisher rejection"} case passed its deadline.`, "/admin/recovery"); }
   }
+
+  // 5b. accepted orders that passed their delivery deadline: tell the customer and the publisher once (see services/deadlines.ts)
+  try { const { notifyExpiredOrders } = await import("@/lib/services/deadlines"); summary.deadlinesMissed = await notifyExpiredOrders(50); } catch (e) { console.error("[finance] deadlines", e instanceof Error ? e.message : "unknown"); }
 
   // 6. monitoring health: placements overdue for a check by 3+ hours
   const { count } = await db.from("published_placements").select("id", { count: "exact", head: true }).in("health", ["HEALTHY", "ISSUE", "NEEDS_REVIEW"]).lt("next_check_at", new Date(Date.now() - 3 * 3600_000).toISOString());

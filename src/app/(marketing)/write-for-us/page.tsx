@@ -21,10 +21,10 @@ export default async function WriteForUsPage({ searchParams }: { searchParams: P
     <>
       <section className="py-14 border-b border-line">
         <div className="max-w-[1180px] mx-auto px-6">
-          <div className="text-sm text-verdigrisdark mb-3">Write for Us</div>
+          <div className="text-sm text-accenttext mb-3">Write for Us</div>
           <h1 className="font-serif font-bold text-4xl mb-4">Write for PostAtlas</h1>
           <p className="text-inksoft max-w-[60ch] mb-6">Share original, practical insights with readers interested in SEO, digital marketing, technology, SaaS, content strategy, link building and online business.</p>
-          <a href="#submit" className="inline-block px-5 py-3 bg-ink text-paper rounded text-sm">Submit Your Article</a>
+          <a href="#submit" className="btn-primary !py-2.5">Submit Your Article</a>
         </div>
       </section>
 
@@ -76,7 +76,7 @@ export default async function WriteForUsPage({ searchParams }: { searchParams: P
             </div>
             <div className="mb-5"><label className="block text-sm mb-1.5">Author bio</label><textarea name="bio" rows={3} className="w-full border border-line rounded px-3 py-2.5 text-sm" /></div>
             <input type="text" name="company_website_hp" tabIndex={-1} autoComplete="off" className="absolute -left-[9999px]" />
-            <button type="submit" className="px-5 py-2.5 bg-ink text-paper rounded text-sm">Submit Your Article</button>
+            <button type="submit" className="btn-primary">Submit Your Article</button>
           </form>
         </div>
       </section>

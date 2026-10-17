@@ -53,7 +53,7 @@ export default async function AdminPayouts({ searchParams }: { searchParams: Pro
             {p.hold_reason && <div className="text-redsig mt-2">Hold: {p.hold_reason}</div>}
             {p.last_error && <div className="text-inksoft mt-1">Note: {p.last_error}</div>}
             {d && <div className="mt-2">Destination: {d.bank_name} •••• {d.account_last4} ({d.currency}) · {d.account_holder} · <Link className="underline" href={`/admin/payouts?reveal=${p.destination_id}`}>show full details (audited)</Link></div>}
-            {reveal && sp.reveal === p.destination_id && <div className="mt-2 rounded border border-line bg-paperdim p-3 font-mono break-all">{reveal.holder} · {reveal.bank} · {reveal.account}{reveal.swift ? ` · ${reveal.swift}` : ""} · {reveal.currency}</div>}
+            {reveal && sp.reveal === p.destination_id && <div className="mt-2 rounded border border-line bg-mist p-3 font-mono break-all">{reveal.holder} · {reveal.bank} · {reveal.account}{reveal.swift ? ` · ${reveal.swift}` : ""} · {reveal.currency}</div>}
 
             {(p.status === "PROCESSING" || p.status === "UNCERTAIN") && (
               <form action={recordPayout} className="grid gap-2 mt-4 border-t border-line pt-4 max-w-2xl">

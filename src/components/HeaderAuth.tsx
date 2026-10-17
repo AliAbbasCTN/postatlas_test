@@ -13,14 +13,14 @@ export function HeaderAuth({ onNavigate }: { mobile?: boolean; onNavigate?: () =
     createClient().auth.getUser().then(({ data }) => { if (alive) setSignedIn(!!data.user); }).catch(() => undefined);
     return () => { alive = false; };
   }, []);
-  const link = "text-sm px-3 py-2 text-inksoft hover:text-ink transition text-center";
-  const solid = "text-sm px-4 py-2.5 bg-ink text-paper rounded hover:bg-verdigrisdark transition text-center font-medium";
+  const link = "text-sm px-3 py-2 rounded-md text-inksoft hover:bg-mist hover:text-ink transition-colors text-center";
+  const solid = "btn-primary";
   return signedIn ? (
     <Link href="/dashboard" onClick={onNavigate} className={solid}>My dashboard</Link>
   ) : (
     <>
       <Link href="/login" onClick={onNavigate} className={link}>Log in</Link>
-      <Link href="/check" onClick={onNavigate} className={solid}>Check your website</Link>
+      <Link href="/signup" onClick={onNavigate} className={solid}>Get started</Link>
     </>
   );
 }

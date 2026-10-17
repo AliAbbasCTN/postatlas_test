@@ -3,14 +3,19 @@ import { notFound } from "next/navigation";
 import { requireWorkspace } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { cancelOrder, requestReplacement } from "@/lib/actions/orders";
+import { cancelOrder, requestReplacement, resolveExpiredOrder } from "@/lib/actions/orders";
+import { submitSiteReview } from "@/lib/actions/reviews";
+import { DeadlineNotice } from "@/components/DeadlineNotice";
+import { StarInput, StarsDisplay } from "@/components/Stars";
+import { canRequestExpiryRemedy, closedOrderLabel, formatDueUtc } from "@/lib/order-deadline";
+import { canReviewOrder, MAX_COMMENT } from "@/lib/review";
 import { submitPayment } from "@/lib/actions/payments";
 import { submitArticle } from "@/lib/actions/submissions";
 import { recheckPlacement } from "@/lib/actions/fulfillment";
 import { raiseDispute, addDisputeMessage } from "@/lib/actions/disputes";
 import { DISPUTE_CATEGORIES } from "@/lib/dispute-categories";
 import { SubmitButton } from "@/components/SubmitButton";
-import { PageHeader, Money, fmtDateTime, NextStep } from "@/components/ui";
+import { OrderProgress, PageHeader, Money, fmtDateTime, NextStep } from "@/components/ui";
 import { StatusBadge } from "@/components/StatusBadge";
 import { FormFeedback } from "@/components/FormFeedback";
 import { ORDER_STATUS_LABEL, canTransition, customerNextAction } from "@/lib/order-state";
@@ -48,6 +53,13 @@ export default async function OrderDetail({ params, searchParams }: { params: Pr
   const { data: pricing } = await supabase.from("order_pricing").select("list_price_usd, checkout_currency, amount_due, fx_rate, fx_source, fx_rate_at, payment_method_id").eq("order_id", id).maybeSingle();
   const methods = status === "PAYMENT_PENDING" && pricing?.payment_method_id ? (await createAdminClient().from("payment_methods").select("id, name, account_identifier, instructions").eq("id", pricing.payment_method_id)).data ?? [] : [];
 
+  // Reviews and refunds have no browser-readable policy for the customer, so they are read here on the server, only after the
+  // order itself was loaded through RLS (which proves the caller belongs to the owning workspace).
+  const adminDb = createAdminClient();
+  const [{ data: review }, { data: refund }] = await Promise.all([
+    adminDb.from("site_reviews").select("rating, comment, status, created_at").eq("order_id", id).maybeSingle(),
+    order.expiry_choice === "refund" ? adminDb.from("refunds").select("status, amount, currency, created_at").eq("order_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle() : Promise.resolve({ data: null })
+  ]);
   const next = customerNextAction(status);
   // The caller's role in the workspace that OWNS this order (their personal account or a team), not the active one.
   const ownerRole = workspaces.find((w) => w.id === order.organization_id)?.role;
@@ -59,9 +71,36 @@ export default async function OrderDetail({ params, searchParams }: { params: Pr
 
   return (
     <div>
-      <PageHeader title={`Order: ${site?.domain ?? "publisher"}`} subtitle={`${isGuest ? "Guest post" : "Link in an existing article"} · linking to ${order.target_url}`} action={<StatusBadge status={status} />} />
+      <PageHeader title={`Order: ${site?.domain ?? "publisher"}`} subtitle={`${isGuest ? "Guest post" : "Link in an existing article"} · linking to ${order.target_url}`} action={<StatusBadge status={status} label={closedOrderLabel(status, order.expiry_choice) ?? undefined} />} />
       <FormFeedback error={sp.error} success={sp.created ? "Order created. Next, send payment and enter your reference below." : sp.notice} />
       {next && !["PAYMENT_PENDING", "PAID"].includes(status) && status !== "ISSUE_DETECTED" && <NextStep title={ORDER_STATUS_LABEL[status]} hint={next.hint} href="#history" label="See history" />}
+
+      <OrderProgress status={status} />
+      {status === "PUBLISHER_REJECTED" && order.expiry_choice ? (
+        <section className="card mb-6 text-sm" aria-labelledby="expired-choice">
+          <h2 id="expired-choice" className="font-serif font-semibold text-lg mb-1">{order.expiry_choice === "refund" ? "Refund requested" : "Alternative placement requested"}</h2>
+          {order.expiry_choice === "refund"
+            ? <p className="text-inksoft">The publisher missed the delivery deadline and you asked for a refund{refund ? <> of <b>{formatAmount(refund.amount, refund.currency)}</b> (status: <b>{refund.status.toLowerCase()}</b>)</> : ""}. Our team reviews it, then transfers the money manually and records the transfer here. Nothing is refunded until that happens, and this order closes once a full refund is completed.</p>
+            : <p className="text-inksoft">The publisher missed the delivery deadline. Our team is arranging another publisher on the same price and terms, and will refund you if no suitable publisher is available. You will not be charged again.</p>}
+        </section>
+      ) : (status === "CANCELLED" || status === "PUBLISHER_REJECTED") && <p className="mb-6 rounded-md border border-line bg-white p-4 text-sm text-inksoft">{status === "CANCELLED" ? "This order was cancelled." : "The publisher declined this order."} You can choose another publisher from <Link className="text-accenttext underline" href="/dashboard/publishers">Find Publishers</Link>.</p>}
+
+      <DeadlineNotice status={status} dueAt={order.due_at} turnaroundHours={order.turnaround_hours} viewer="customer" />
+      {canRequestExpiryRemedy({ status, due_at: order.due_at }) && (canPay ? (
+        <section id="expired" className="card mb-6 border-redsig/40" aria-labelledby="exp">
+          <h2 id="exp" className="font-serif font-semibold text-lg mb-1">Choose what happens next</h2>
+          <p className="text-sm text-inksoft mb-4">The publisher accepted this order but did not deliver by {formatDueUtc(order.due_at)}. You can wait a little longer (the publisher may still deliver), or choose one of the options below. Choosing closes the order for this publisher and they are not paid for it.</p>
+          <form action={resolveExpiredOrder} className="grid gap-4 max-w-lg">
+            <input type="hidden" name="order_id" value={order.id} />
+            <div><label className="label" htmlFor="expiry_note">Note for our team (optional)</label><textarea id="expiry_note" name="note" maxLength={500} rows={2} className="input" /></div>
+            <div className="flex flex-wrap gap-3">
+              <SubmitButton name="choice" value="alternative" pendingText="Sending..." className="btn-primary">Find me another publisher</SubmitButton>
+              <SubmitButton name="choice" value="refund" pendingText="Sending..." className="btn">Request a refund</SubmitButton>
+            </div>
+            <p className="text-xs text-inksoft">A refund follows our <Link className="underline text-accenttext" href="/refund-policy">Refund Policy</Link>: it is reviewed by our team and paid back manually to the method you used. Another publisher keeps the same price and your article; you are never charged twice.</p>
+          </form>
+        </section>
+      ) : <p className="mb-6 rounded-md border border-line bg-white p-4 text-sm text-inksoft">This order is past its delivery deadline. The workspace owner or an SEO manager can ask for a refund or an alternative placement.</p>)}
 
       <div className="card mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
         <div><div className="text-xs text-inksoft">Price</div><Money value={order.customer_price} />{pricing?.checkout_currency === "PKR" ? <div className="text-xs text-inksoft">Pay {formatAmount(pricing.amount_due, "PKR")}</div> : null}</div>
@@ -92,7 +131,7 @@ export default async function OrderDetail({ params, searchParams }: { params: Pr
           <h2 id="art" className="font-serif font-semibold text-lg mb-1">{isGuest ? "Submit your article" : "Tell the publisher where to add your link"}</h2>
           <p className="text-sm text-inksoft mb-4">Payment approved. {isGuest ? "Write plain text (at least 300 words)." : "Describe the page and the sentence the link should sit in."} Prohibited topics (gambling, CBD, vape, link networks) are not accepted.</p>
           {submission.data?.review_status === "CHANGES_REQUESTED" && <FormFeedback error={`Our team asked for changes: ${submission.data.review_note ?? ""}`} />}
-          {site?.article_requirements && <div className="text-sm border border-line rounded p-3 mb-4 bg-paperdim"><b>Publisher requirements</b><div className="whitespace-pre-line">{site.article_requirements}</div></div>}
+          {site?.article_requirements && <div className="text-sm border border-line rounded p-3 mb-4 bg-mist"><b>Publisher requirements</b><div className="whitespace-pre-line">{site.article_requirements}</div></div>}
           <form action={submitArticle} className="grid gap-4">
             <input type="hidden" name="order_id" value={order.id} />
             <div><label className="label" htmlFor="title">{isGuest ? "Article title" : "Existing article or page"}</label><input id="title" name="title" required minLength={5} maxLength={200} className="input" /></div>
@@ -113,7 +152,7 @@ export default async function OrderDetail({ params, searchParams }: { params: Pr
         <section className="card mb-6" aria-labelledby="health">
           <h2 id="health" className="font-serif font-semibold text-lg mb-3">Placement health</h2>
           <div className="text-sm grid gap-1">
-            <div>Published page: <a className="underline break-all text-verdigrisdark" href={placement.data.published_url} rel="noopener noreferrer nofollow" target="_blank">{placement.data.published_url}</a></div>
+            <div>Published page: <a className="underline break-all text-accenttext" href={placement.data.published_url} rel="noopener noreferrer nofollow" target="_blank">{placement.data.published_url}</a></div>
             <div>Status: <StatusBadge status={placement.data.health} /></div>
             <div>Last checked: {fmtDateTime(placement.data.last_checked_at)}</div>
             <div>Verified: {placement.data.verified_at ? fmtDateTime(placement.data.verified_at) : "Not yet verified"}</div>
@@ -128,6 +167,23 @@ export default async function OrderDetail({ params, searchParams }: { params: Pr
       )}
       {status === "ISSUE_DETECTED" && canPay && (
         <form action={requestReplacement} className="mb-6"><input type="hidden" name="order_id" value={order.id} /><button className="btn">Request a replacement</button></form>
+      )}
+
+      {(review || (canPay && canReviewOrder({ status, hasVerifiedPlacement: !!placement.data?.verified_at, alreadyReviewed: false }).ok)) && (
+        <section id="review" className="card mb-6" aria-labelledby="rev">
+          <h2 id="rev" className="font-serif font-semibold text-lg mb-1">Rate {site?.domain ?? "this website"}</h2>
+          {review ? (
+            <div className="text-sm"><StarsDisplay rating={review.rating} />{review.comment && <p className="mt-2 whitespace-pre-line">{review.comment}</p>}<p className="mt-2 text-xs text-inksoft">Reviewed {fmtDateTime(review.created_at)}{review.status === "hidden" ? " · hidden by our team" : " · shown on the website's listing"}. A review cannot be edited or repeated for the same order.</p></div>
+          ) : (
+            <form action={submitSiteReview} className="grid gap-4 max-w-lg">
+              <p className="text-sm text-inksoft">Your placement was published and verified. Rate the website (not the publisher's profile) to help other buyers. Your name is never shown.</p>
+              <input type="hidden" name="order_id" value={order.id} />
+              <StarInput />
+              <div><label className="label" htmlFor="comment">Feedback (optional)</label><textarea id="comment" name="comment" maxLength={MAX_COMMENT} rows={4} className="input" placeholder="How was the quality, speed and communication? Please leave out web addresses." /></div>
+              <SubmitButton pendingText="Saving..." className="btn-primary w-fit">Submit review</SubmitButton>
+            </form>
+          )}
+        </section>
       )}
 
       {dispute.data && (
@@ -164,7 +220,7 @@ export default async function OrderDetail({ params, searchParams }: { params: Pr
           ))}
         </ol>
       </section>
-      <p className="text-sm text-inksoft">Questions before you decide anything? <Link className="underline text-verdigrisdark" href={`/dashboard/advice/new?order_id=${order.id}`}>Ask for advice</Link></p>
+      <p className="text-sm text-inksoft">Questions before you decide anything? <Link className="underline text-accenttext" href={`/dashboard/advice/new?order_id=${order.id}`}>Ask for advice</Link></p>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { loadOrderFor } from "@/lib/services/orders";
 import { acceptOrder, rejectOrder, startWork, submitPublishedUrl, requestRestorationCheck } from "@/lib/actions/fulfillment";
 import { addDisputeMessage } from "@/lib/actions/disputes";
 import { PageHeader, fmtDateTime } from "@/components/ui";
+import { DeadlineNotice } from "@/components/DeadlineNotice";
 import { StatusBadge } from "@/components/StatusBadge";
 import { FormFeedback } from "@/components/FormFeedback";
 import { isUuid } from "@/lib/validation";
@@ -36,6 +37,8 @@ export default async function PublisherOrder({ params, searchParams }: { params:
     <div className="max-w-3xl">
       <PageHeader title={`Order for ${site?.domain}`} subtitle={order.order_type === "guest_post" ? "Guest post" : "Link in an existing article"} action={<StatusBadge status={status} />} />
       <FormFeedback error={sp.error} success={sp.notice} />
+      <DeadlineNotice status={status} dueAt={order.due_at} turnaroundHours={order.turnaround_hours} viewer="publisher" />
+      {status === "PUBLISHER_REJECTED" && order.expiry_choice && <p className="mb-6 rounded-md border border-line bg-white p-4 text-sm text-inksoft">The delivery deadline passed and the customer closed this order. It is closed for you and no payout is due.</p>}
       <section className="card mb-6 text-sm grid gap-2">
         <div><span className="text-inksoft">Link to:</span> <span className="break-all">{order.target_url}</span></div>
         <div><span className="text-inksoft">Link text:</span> {order.anchor_text ?? "Publisher's choice"}</div>
@@ -43,7 +46,7 @@ export default async function PublisherOrder({ params, searchParams }: { params:
       {sub && (
         <section className="card mb-6"><h2 className="font-serif font-semibold text-lg mb-1">{sub.title}</h2>
           <div className="text-xs text-inksoft mb-3">{sub.word_count} words · shown as plain text</div>
-          {sub.instructions && <div className="text-sm bg-paperdim rounded p-3 mb-3 whitespace-pre-line"><b>Customer instructions</b><div>{sub.instructions}</div></div>}
+          {sub.instructions && <div className="text-sm bg-mist rounded p-3 mb-3 whitespace-pre-line"><b>Customer instructions</b><div>{sub.instructions}</div></div>}
           {sub.body && <pre className="whitespace-pre-wrap break-words text-sm font-sans max-h-[480px] overflow-auto">{sub.body}</pre>}</section>
       )}
 
@@ -68,7 +71,7 @@ export default async function PublisherOrder({ params, searchParams }: { params:
             <label className="label" htmlFor="published_url">Published URL</label><input id="published_url" name="published_url" type="url" required maxLength={2048} className="input" /><button className="btn-primary w-fit">Submit and check</button></form>
         </section>
       )}
-      {placement && <section className="card mb-6 text-sm"><h2 className="font-serif font-semibold text-lg mb-2">Published page</h2><a className="underline break-all text-verdigrisdark" href={placement.published_url} target="_blank" rel="noopener noreferrer nofollow">{placement.published_url}</a>
+      {placement && <section className="card mb-6 text-sm"><h2 className="font-serif font-semibold text-lg mb-2">Published page</h2><a className="underline break-all text-accenttext" href={placement.published_url} target="_blank" rel="noopener noreferrer nofollow">{placement.published_url}</a>
         <div className="mt-2">Health: <StatusBadge status={placement.health} /> <span className="text-xs text-inksoft">Last checked {fmtDateTime(placement.last_checked_at)}</span></div></section>}
 
       {dispute && (

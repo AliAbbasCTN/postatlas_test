@@ -42,5 +42,7 @@ export const LIMITS = {
   payment:      { window: 3600, max: 10 },
   verify:       { window: 3600, max: 12 },
   advice:       { window: 600,  max: 20 },
-  dispute:      { window: 3600, max: 10 }
+  dispute:      { window: 3600, max: 10 },
+  review:       { window: 3600, max: 10 },
+  expiry:       { window: 3600, max: 10 }
 } as const;

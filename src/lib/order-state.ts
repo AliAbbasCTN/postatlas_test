@@ -11,7 +11,7 @@ import type { OrderStatus } from "./types.ts";
 //   PAID                 payment approved; the customer must now submit the article
 //   CONTENT_SUBMITTED    article submitted; held for admin review only if flagged
 //   PENDING_PUBLISHER    waiting for the publisher to accept or reject
-//   ACCEPTED / IN_PROGRESS  publisher committed / working
+//   ACCEPTED / IN_PROGRESS  publisher committed / working (the delivery clock runs; see src/lib/order-deadline.ts)
 //   PUBLISHED            publisher submitted the live URL
 //   VERIFICATION_PENDING PostAtlas is checking the live page (not yet verified)
 //   VERIFIED             an actual check found the expected link
@@ -51,6 +51,10 @@ export const TRANSITION_RULES: Rule[] = [
   { from: "ACCEPTED", to: "CANCELLED", actors: ["admin"] },
   { from: "IN_PROGRESS", to: "PUBLISHED", actors: ["publisher"] },
   { from: "IN_PROGRESS", to: "CANCELLED", actors: ["admin"] },
+  // Delivery deadline missed: the paying customer closes the order out of the publisher's hands and chooses a refund or an
+  // alternative placement. Reachable only through request_expiry_remedy(), which re-checks the deadline in the database.
+  { from: "ACCEPTED", to: "PUBLISHER_REJECTED", actors: ["customer"] },
+  { from: "IN_PROGRESS", to: "PUBLISHER_REJECTED", actors: ["customer"] },
   { from: "PUBLISHED", to: "VERIFICATION_PENDING", actors: ["system"] },
   { from: "VERIFICATION_PENDING", to: "VERIFIED", actors: ["system", "admin"] },
   { from: "VERIFICATION_PENDING", to: "PUBLISHED", actors: ["publisher"] }, // resubmit a corrected URL

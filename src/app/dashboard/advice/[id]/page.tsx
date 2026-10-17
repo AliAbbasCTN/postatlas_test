@@ -37,7 +37,7 @@ export default async function AdviceThread({ params, searchParams }: { params: P
         <button className="btn-primary w-fit">Send</button>
       </form>
       {thread.status === "OPEN" && <form action={closeAdviceThread} className="mt-4"><input type="hidden" name="thread_id" value={thread.id} /><button className="text-sm text-inksoft underline">Mark as resolved</button></form>}
-      {thread.opportunity_id && <p className="mt-6 text-sm"><a className="underline text-verdigrisdark" href={`/dashboard/opportunities/${thread.opportunity_id}`}>Back to the opportunity</a></p>}
+      {thread.opportunity_id && <p className="mt-6 text-sm"><a className="underline text-accenttext" href={`/dashboard/opportunities/${thread.opportunity_id}`}>Back to the opportunity</a></p>}
     </div>
   );
 }

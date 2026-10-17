@@ -76,7 +76,7 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
         </ul>
       )}
 
-      <div className="card mt-10 bg-paperdim">
+      <div className="card mt-10 bg-mist">
         <h2 className="font-serif font-semibold text-lg">Not ready to order?</h2>
         <p className="text-sm text-inksoft mt-1 mb-3">Have a question or want help deciding what makes sense for your website? Talk to the PostAtlas team. No order needed.</p>
         <Link className="btn-primary" href={`/dashboard/advice/new?opportunity_id=${opp.id}`}>Ask for Advice</Link>

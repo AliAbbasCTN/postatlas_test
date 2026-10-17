@@ -10,7 +10,7 @@ export const revalidate = 3600;
 // above 50,000 URLs; publishers are fetched in pages so memory stays bounded either way.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl();
-  const entries: MetadataRoute.Sitemap = ["", "/check", "/publishers", "/how-it-works", "/pricing", "/blog", "/write-for-us", "/about", "/contact", "/privacy", "/terms", "/refund-policy"]
+  const entries: MetadataRoute.Sitemap = ["", "/check", "/publishers", "/how-it-works", "/for-publishers", "/pricing", "/blog", "/write-for-us", "/about", "/contact", "/privacy", "/terms", "/refund-policy"]
     .map((p) => ({ url: `${base}${p}`, changeFrequency: p === "" ? "weekly" : "monthly", priority: p === "" ? 1 : 0.6 }));
   try {
     const db = createPublicClient();

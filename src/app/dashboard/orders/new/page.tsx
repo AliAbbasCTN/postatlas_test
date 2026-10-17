@@ -1,3 +1,4 @@
+import { formatHours, turnaroundHoursFor } from "@/lib/order-deadline";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireWorkspace } from "@/lib/auth";
@@ -62,7 +63,7 @@ export default async function NewOrder({ searchParams }: { searchParams: Promise
         <div className="mb-5"><label className="label" htmlFor="anchor_text">Link text (optional)</label><input id="anchor_text" name="anchor_text" maxLength={100} className="input" /></div>
         <ul className="text-sm text-inksoft list-disc pl-5 mb-5">
           <li>Link type on this site: {listing.link_type ?? "not stated"}</li>
-          {listing.turnaround_days_max && <li>Typical turnaround: up to {listing.turnaround_days_max} days</li>}
+          <li>Delivery deadline: {formatHours(turnaroundHoursFor(listing.turnaround_days_max))} after the publisher accepts{listing.turnaround_days_max ? "" : " (the publisher states no turnaround, so the standard window applies)"}. If it is missed you can ask for a refund or another publisher.</li>
           <li>You pay manually after creating the order; the publisher starts only after your payment is approved and your article is submitted.</li>
           <li>We do not promise rankings or traffic. A placement is a link opportunity.</li>
         </ul>

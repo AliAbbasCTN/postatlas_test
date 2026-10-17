@@ -12,13 +12,14 @@ export default async function ApplyPublisher({ searchParams }: { searchParams: P
   const { data: existing } = await createAdminClient().from("publisher_profiles").select("approved").eq("user_id", user.id).maybeSingle();
   return (
     <div className="max-w-xl mx-auto p-6 md:p-10">
-      <Link href="/dashboard" className="text-sm text-verdigrisdark underline">Back to dashboard</Link>
-      <h1 className="font-serif font-bold text-3xl my-4">Become a publisher</h1>
+      <Link href="/dashboard" className="text-sm text-accenttext underline">Back to dashboard</Link>
+      <h1 className="text-2xl font-semibold tracking-tight my-4">Become a publisher</h1>
       <FormFeedback error={sp.error} success={sp.submitted ? "Application received. Our team will review it." : undefined} />
-      {platformRole === "publisher" ? <p>Your publisher account is active. <Link className="underline text-verdigrisdark" href="/publisher">Open the publisher area</Link>.</p>
+      {platformRole === "publisher" ? <p>Your publisher account is active. <Link className="underline text-accenttext" href="/publisher">Open the publisher area</Link>.</p>
         : existing ? <p className="text-inksoft">Your application is {existing.approved ? "approved" : "waiting for review"}.</p> : (
         <form action={applyAsPublisher} className="card grid gap-4">
           <p className="text-sm text-inksoft">Publishers list websites they own and fulfil placement orders. Our team approves every publisher and every listing.</p>
+          <div className="rounded-md bg-mist p-4 text-sm text-inksoft"><strong className="mb-1 block text-ink">What happens next</strong><ol className="grid list-decimal gap-1 pl-5"><li>You send this short application.</li><li>Our team reviews it. Until it is approved, you keep using your normal customer account.</li><li>After approval, add your websites. Each one is reviewed before customers can see it.</li></ol></div>
           <div><label className="label" htmlFor="display_name">Name or company</label><input id="display_name" name="display_name" required minLength={2} maxLength={100} className="input" /></div>
           <div><label className="label" htmlFor="bio">Tell us about your websites</label><textarea id="bio" name="bio" required minLength={20} maxLength={1000} rows={5} className="input" /></div>
           <button className="btn-primary w-fit">Apply</button>

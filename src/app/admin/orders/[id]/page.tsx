@@ -7,6 +7,7 @@ import { reviewSubmission } from "@/lib/actions/submissions";
 import { resolveDispute, addDisputeMessage } from "@/lib/actions/disputes";
 import { PageHeader, Money, fmtDateTime } from "@/components/ui";
 import { formatAmount, formatUsd } from "@/lib/money";
+import { formatDueUtc, formatHours, deadlineState } from "@/lib/order-deadline";
 import { StatusBadge } from "@/components/StatusBadge";
 import { FormFeedback } from "@/components/FormFeedback";
 import { ORDER_STATUS_LABEL, allowedTransitions } from "@/lib/order-state";
@@ -53,6 +54,14 @@ export default async function AdminOrder({ params, searchParams }: { params: Pro
       <FormFeedback error={sp.error} />
       <div className="card mb-6 text-sm grid sm:grid-cols-4 gap-4"><div><div className="text-xs text-inksoft">Price</div><Money value={order.customer_price} /></div><div><div className="text-xs text-inksoft">Anchor</div>{order.anchor_text ?? "-"}</div><div><div className="text-xs text-inksoft">Created</div>{fmtDateTime(order.created_at)}</div><div><div className="text-xs text-inksoft">Payments</div>{(payments.data ?? []).map((p: any) => <div key={p.id}><StatusBadge status={p.status} /></div>)}{(payments.data ?? []).length === 0 && "-"}</div></div>
 
+      {(order.due_at || order.expiry_choice) && (
+        <div className={`card mb-6 text-sm ${deadlineState(order).kind === "overdue" ? "border-redsig/40" : ""}`}>
+          <b>Delivery deadline:</b> {order.due_at ? formatDueUtc(order.due_at) : "-"}{order.turnaround_hours ? ` (${formatHours(order.turnaround_hours)} from acceptance${order.accepted_at ? `, accepted ${formatDueUtc(order.accepted_at)}` : ""})` : ""}
+          {deadlineState(order).kind === "overdue" && <span className="text-redsig"> · overdue, customer has not yet chosen</span>}
+          {order.expiry_choice && <div className="mt-1">Customer chose <b>{order.expiry_choice === "refund" ? "a refund" : "an alternative placement"}</b> on {fmtDateTime(order.expiry_choice_at)}. Handle it in <Link className="underline" href={order.expiry_choice === "refund" ? "/admin/refunds" : "/admin/recovery"}>{order.expiry_choice === "refund" ? "Refunds" : "Recovery cases"}</Link>.</div>}
+        </div>
+      )}
+
       {status === "CONTENT_SUBMITTED" && sub.data && (
         <section className="card mb-6"><h2 className="font-serif font-semibold text-lg mb-1">Article held for review</h2>
           {flags.length > 0 && <p className="text-sm text-redsig mb-2">Flagged: {describeFlags(flags)}</p>}
@@ -62,7 +71,7 @@ export default async function AdminOrder({ params, searchParams }: { params: Pro
       )}
       {sub.data && status !== "CONTENT_SUBMITTED" && <details className="card mb-6"><summary className="cursor-pointer font-medium">Submitted article: {sub.data.title} ({sub.data.word_count} words)</summary><pre className="whitespace-pre-wrap break-words text-sm font-sans max-h-96 overflow-auto mt-3">{sub.data.body}</pre></details>}
 
-      {placement.data && <section className="card mb-6 text-sm"><h2 className="font-serif font-semibold text-lg mb-2">Placement</h2><a className="underline break-all text-verdigrisdark" href={placement.data.published_url} target="_blank" rel="noopener noreferrer nofollow">{placement.data.published_url}</a>
+      {placement.data && <section className="card mb-6 text-sm"><h2 className="font-serif font-semibold text-lg mb-2">Placement</h2><a className="underline break-all text-accenttext" href={placement.data.published_url} target="_blank" rel="noopener noreferrer nofollow">{placement.data.published_url}</a>
         <div className="mt-2">Health <StatusBadge status={placement.data.health} /> · consecutive failures {placement.data.consecutive_failures} · last checked {fmtDateTime(placement.data.last_checked_at)}</div>
         <ul className="mt-3 border-t border-line pt-2">{(checks ?? []).map((c: any) => <li key={c.checked_at} className="flex justify-between gap-3 py-0.5"><span>{c.message ?? c.result} <span className="text-xs text-inksoft">({c.trigger})</span></span><span className="text-inksoft whitespace-nowrap">{fmtDateTime(c.checked_at)}</span></li>)}</ul>
         {status === "VERIFICATION_PENDING" && <form action={adminManualVerify} className="mt-4 flex flex-wrap gap-2"><input type="hidden" name="order_id" value={id} /><label className="sr-only" htmlFor="ev">Evidence</label><input id="ev" name="note" required minLength={10} maxLength={500} placeholder="Evidence you checked (required)" className="input w-80" /><button className="btn">Verify manually</button></form>}</section>}

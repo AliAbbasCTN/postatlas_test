@@ -34,12 +34,12 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         <nav aria-label="Breadcrumb" className="text-sm text-inksoft mb-4"><Link href="/">Home</Link> / <Link href="/publishers">Publishers</Link> / {niche}</nav>
         <h1 className="font-serif font-bold text-4xl mb-3">{niche} publishers</h1>
         <p className="text-inksoft max-w-[62ch] mb-8">Websites in this topic that our team has approved. Compare prices and link types, then open a publisher for details.</p>
-        {rows.length === 0 ? <p className="text-inksoft">No approved publishers in this topic yet. <Link className="underline text-verdigrisdark" href="/publishers">Browse all publishers</Link>.</p> : (
+        {rows.length === 0 ? <p className="text-inksoft">No approved publishers in this topic yet. <Link className="underline text-accenttext" href="/publishers">Browse all publishers</Link>.</p> : (
           <ul className="grid gap-3">{rows.map((w) => { const m = Array.isArray(w.publisher_metrics) ? w.publisher_metrics[0] : w.publisher_metrics; return (
             <li key={w.id} className="card flex flex-wrap items-center justify-between gap-4"><div><Link href={`/publishers/${encodeURIComponent(w.domain)}`} className="font-serif font-semibold text-lg">{w.domain}</Link><div className="text-sm text-inksoft">{w.country ?? ""}{w.link_type ? ` · ${w.link_type}` : ""}</div></div>
               <div className="text-sm">{m?.verified && m.dr != null ? <>DR <b className="font-mono">{m.dr}</b> <span className="text-xs text-verdigrisdark">verified</span></> : <span className="italic text-inksoft">Authority not verified</span>}</div>
               <Money value={w.price_guest_post ?? w.price_link_insertion} /></li>); })}</ul>)}
-        <p className="mt-10 text-sm text-inksoft">Not sure which topic fits your pages? <Link className="underline text-verdigrisdark" href="/authority-audit">See how the Authority Audit works</Link>.</p>
+        <p className="mt-10 text-sm text-inksoft">Not sure which topic fits your pages? <Link className="underline text-accenttext" href="/authority-audit">See how the Authority Audit works</Link>.</p>
       </div>
     </section>
   );

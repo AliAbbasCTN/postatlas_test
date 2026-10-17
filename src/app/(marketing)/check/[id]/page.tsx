@@ -96,7 +96,7 @@ export default async function CheckReport({ params }: { params: Promise<{ id: st
             <h2 className="font-serif font-bold text-2xl mb-1">Publishers that fit {row.category.toLowerCase()} sites</h2>
             <p className="text-inksoft mb-6">Options, not promises. A placement is a link opportunity; search engines decide what it is worth.</p>
             {ranked.length === 0 ? (
-              <div className="card"><strong className="font-serif block mb-1">No approved publisher covers this topic yet</strong><span className="text-sm text-inksoft">Tell us what you need and we will look for options. <Link className="underline text-verdigrisdark" href="/contact">Contact the team</Link>.</span></div>
+              <div className="card"><strong className="font-serif block mb-1">No approved publisher covers this topic yet</strong><span className="text-sm text-inksoft">Tell us what you need and we will look for options. <Link className="underline text-accenttext" href="/contact">Contact the team</Link>.</span></div>
             ) : (
               <ul className="grid md:grid-cols-2 gap-4">{ranked.map(({ candidate: c, match }) => (
                 <li key={c.websiteId} className="card flex flex-col">
@@ -114,7 +114,7 @@ export default async function CheckReport({ params }: { params: Promise<{ id: st
                 </li>))}
               </ul>
             )}
-            <p className="text-sm text-inksoft mt-6">You will be asked to sign in or create an account only when you press &quot;Order this placement&quot;. <Link className="underline text-verdigrisdark" href="/publishers">Browse all publishers</Link></p>
+            <p className="text-sm text-inksoft mt-6">You will be asked to sign in or create an account only when you press &quot;Order this placement&quot;. <Link className="underline text-accenttext" href="/publishers">Browse all publishers</Link></p>
           </div>
         )}
 

@@ -31,7 +31,7 @@ export default async function AdminPublishers({ searchParams }: { searchParams: 
               <form action={reviewPublisherApplication}><input type="hidden" name="profile_id" value={a.id} /><input type="hidden" name="decision" value="reject" /><button className="btn">Reject</button></form></div></li>); })}</ul>)}
 
       <h2 className="font-serif font-semibold text-xl mb-3">Listings</h2>
-      <nav aria-label="Listing status" className="flex flex-wrap gap-2 mb-4 text-sm">{STATUSES.map((s) => <a key={s} href={`/admin/publishers?status=${s}`} aria-current={s === status ? "page" : undefined} className={`px-3 py-1.5 rounded border ${s === status ? "bg-ink text-paper border-ink" : "border-line"}`}>{s.replace("_", " ")}</a>)}</nav>
+      <nav aria-label="Listing status" className="flex flex-wrap gap-2 mb-4 text-sm">{STATUSES.map((s) => <a key={s} href={`/admin/publishers?status=${s}`} aria-current={s === status ? "page" : undefined} className={`px-3 py-1.5 rounded border ${s === status ? "bg-navy text-paper border-ink" : "border-line"}`}>{s.replace("_", " ")}</a>)}</nav>
       {(data ?? []).length === 0 ? <EmptyState title="No listings in this state" /> : (
         <ul className="grid gap-4">{(data ?? []).map((l: any) => { const m = Array.isArray(l.publisher_metrics) ? l.publisher_metrics[0] : l.publisher_metrics; const pp = Array.isArray(l.publisher_profiles) ? l.publisher_profiles[0] : l.publisher_profiles; return (
           <li key={l.id} className="card">
