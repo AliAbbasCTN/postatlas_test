@@ -1,0 +1,46 @@
+# Marketplace finance: pricing, currencies, payments, payouts, recovery, refunds
+
+## Pricing (single source of truth)
+* USD is canonical. The customer pays the publisher's USD **list price**; no markup, tax or fee is added.
+* PostAtlas commission = **2%** of the USD list price, taken from the publisher side. Publisher entitlement = list price - commission ($100 -> $2 / $98; $250 -> $5 / $245).
+* Calculated by `src/lib/money.ts` (integer cents, `BigInt`, half-up rounding) and **independently re-checked by CHECK constraints** on `order_pricing`; `create_order_priced()` refuses to create an order if the two disagree. Commission is never computed from a converted amount.
+* PKR checkout amount = list price x locked rate, rounded half-up to a whole rupee.
+
+## Exchange rate
+* Source: `open.er-api.com` (ExchangeRate-API open access; keyless, updated daily, caching allowed, attribution required). Set `FX_API_KEY` to use the keyed `exchangerate-api.com` plan instead (clearer commercial licence). **It is a market reference rate, not your bank's rate.** Admins can enter a manual rate (`/admin/finance`).
+* Stored append-only in `fx_rates` with source and time. Refreshed only when the stored rate is older than 12 hours (finance cron, or a page load if the cron has not run; failed refreshes are throttled to one per 10 minutes).
+* Freshness policy: <=26h "live"; <=48h "recent"; <=7d shown labelled "not live"; older = hidden ("temporarily unavailable"). **PKR checkout is refused when the rate is older than 48 hours** (also enforced in SQL). A bad provider response (error, wrong base, missing, outside 50-1000) is rejected, never guessed.
+* Verified from ExchangeRate-API's documentation: endpoint, no key, daily update, attribution, rate limiting. Not verified by a live call from this environment (no network).
+
+## Checkout and payments
+* The customer picks "method: pay in CURRENCY" from combinations the methods really support (`payment_methods.currencies`, default USD-only; a super admin ticks PKR in `/admin/finance`). The server re-validates the pair, locks the amount in `order_pricing` (list price, commission, net, currency, rate, source, rate time, amount due, method) and the snapshot cannot change afterwards except through the audited `admin_correct_checkout()` (before payment only).
+* All payment methods are **manual bank/wallet transfers**. There is no payment-provider integration, so there are no webhooks or signed events to verify. A submitted reference is only a claim: `submit_payment()` records it (amount/currency/method come from the snapshot, never the browser) and an admin approves or rejects with `review_payment()`, one transaction that locks order and payment, so two admins cannot both decide and the order, payment, ledger and history cannot disagree. Duplicate references are rejected (unique index) and only one confirmed payment per order can exist.
+
+## Payouts
+* Obligation: `create_payout_obligation()` runs when a placement is verified (automatic check or admin manual verification). It requires a confirmed payment and a verified order, is idempotent (unique index: one fulfilment payout per order; one replacement payout per recovery case), stores `verified_at`, `eligible_at` and `process_by = verified_at + 12h`, and is placed on hold if a dispute is open. If the app crashes between verification and recording it, the finance cron recreates it.
+* Processing: the finance cron (`/api/cron/finance`, every 30 minutes) moves eligible, un-held payouts that have a **verified** destination into the transfer queue (`PROCESSING`) with `FOR UPDATE SKIP LOCKED`, notifies the publisher, and alerts staff for anything past the 12-hour target (once). **"Initiated" means queued for the transfer workflow, not settled by a bank.**
+* Execution: **no automatic payout provider is integrated.** An administrator makes the bank transfer, then records it in `/admin/payouts`. `PAID` requires a transfer reference, evidence, the amount and currency actually sent (must match the destination account's currency) and, for PKR, the rate used; it is enforced by a CHECK constraint. Failed transfers go back through the queue; **uncertain** transfers can only be reconciled (paid / confirmed-not-sent), never retried blindly.
+* Destinations: publishers add a bank account (PKR or USD). The account number is encrypted with AES-256-GCM (`PAYOUT_DATA_KEY`), only the last four digits are ever shown, there is no RLS policy for browsers, and an admin must verify it. Admins see the full number only after clicking "show", only for verified destinations, and each reveal is audit-logged.
+* Currencies: entitlement is always USD. A PKR payout is allowed only to a PKR account, and records the rate, source and time, the amount actually sent and any disclosed conversion cost. No provider, conversion or tax fee is deducted from a publisher by default.
+* Holds: an open dispute holds unpaid payouts; an approved refund holds them; admins can hold/release with a reason. Money already transferred is **never clawed back automatically**.
+
+## Publisher declines a paid order
+`rejectOrder` records the mandatory reason and opens a **recovery case** (48h admin deadline) when a confirmed payment exists, cancels any unpaid entitlement of the declining publisher, and tells the customer their payment is safe. If never paid, the order simply ends without refund logic. An admin gives the order to another approved publisher (`reassign_order()`: same customer price, target and terms; new publisher must accept; the new publisher's own payout is created only after verification) or resolves the case with a refund request. The finance cron re-opens a case for any rejected order that lacks one, and escalates cases past their deadline.
+**Replacement rules (enforced in SQL, executed by `tests/db-payouts.test.ts`):** a replacement listing may not cost more than the customer's original list price (the budget); its pay (98% of its own list price) is **fixed on the recovery case at reassignment** and cannot change if the publisher later edits their price; the original publisher's *unpaid* entitlement is cancelled (rejection and link-loss alike) and money already paid is never clawed back; when the original was already paid, the replacement payout is a separate `replacement` payout and its amount is recorded as a `replacement_cost` ledger memo that PostAtlas bears, never charged to the customer. Repeating the obligation call (retry, cron, restoration by the original publisher) returns the existing payout and never creates a second one or changes pay.
+
+## Link disappears after verification
+Monitoring keeps its existing policy (several consecutive failures before `ISSUE_DETECTED`; transient errors do not count). On confirmation a **restoration case** opens (72h, `RESTORE_DEADLINE_HOURS`), the customer and original publisher are notified, and the publisher sees the deadline and a "check now" button. A successful verification closes the case (`mark_case_restored`) and the monitoring history keeps both events. Restoration never creates a second payout and never increases pay. If the deadline passes the case escalates; an admin can reassign (replacement payout tracked separately, original unpaid entitlement cancelled, amounts already paid not clawed back) or refund.
+
+## Disputes and refunds
+Disputes keep the existing evidence/message flow. New: opening one holds unpaid payouts; resolving one records a **remedy** (none, release payout, restoration, replacement, refund) that is applied (refund = a request, never a completed refund).
+Refunds: `REQUESTED -> APPROVED -> PROCESSING -> COMPLETED`, plus `REJECTED`, `FAILED`, `UNCERTAIN`. A refund can never exceed what was paid (locked check including pending refunds), `COMPLETED` requires a real transfer reference and evidence, duplicates are blocked by idempotency keys, and the order becomes `CANCELLED` only after a completed **full** refund. Cancelling a paid order opens a refund request; it never marks anything refunded. No automatic refund provider exists: refunds are manual bank transfers recorded by an admin.
+
+## Ledger
+`ledger_entries` is append-only with unique idempotency keys: payment confirmed, commission earned (memo), entitlement accrued/cancelled (memo), replacement cost (memo), payout paid, refund paid. It is the audit trail, not a general accounting system.
+
+## What still needs you
+* Run the SQL upgrades on staging in this order: `PostAtlas_upgrade_individual_customers.sql`, `PostAtlas_upgrade_marketplace_finance.sql`, `PostAtlas_upgrade_payout_hardening.sql` (idempotent), then `PostAtlas_verify_schema.sql`. The fresh schema already contains all three. Only the fresh schema and the hardening file were executed (in PGlite) by the test suite; the two older upgrade files have not been run against a pre-upgrade database.
+* Set `PAYOUT_DATA_KEY`, `CRON_SECRET`; decide on `FX_API_KEY`; confirm the commercial terms of the rate source.
+* Review each payment method and tick PKR only where it truly accepts rupees.
+* Vercel Hobby only allows daily crons; the 30-minute finance schedule needs Pro (or call the route from another scheduler).
+* Real money movement (payments in, payouts and refunds out) is manual until a provider is contracted and integrated.

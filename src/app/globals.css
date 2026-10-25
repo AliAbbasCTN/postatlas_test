@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: #F5F8FA;
+  color: #1F2937;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-wrap: anywhere; /* long domains / URLs must never force horizontal scrolling */
+}
+h1, h2, h3 { letter-spacing: -0.01em; }
+:focus-visible { outline: 2px solid #2D3E50; outline-offset: 2px; }
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-medium border border-linestrong bg-white text-ink shadow-card hover:bg-mist transition-colors disabled:opacity-60 disabled:cursor-not-allowed; }
+  .btn-primary { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-semibold bg-accent text-ink border border-accent hover:bg-accentdark hover:border-accentdark shadow-card transition-colors disabled:opacity-60 disabled:cursor-not-allowed; }
+  .btn-danger { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-medium border border-redsig text-redsig bg-white hover:bg-redsig hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed; }
+  .input { @apply w-full border border-inputborder rounded px-3 py-2 text-sm bg-white text-ink placeholder:text-inksoft/70 aria-[invalid=true]:border-redsig disabled:bg-mist disabled:text-inksoft; }
+  .label { @apply block text-sm font-medium mb-1.5 text-ink; }
+  .card { @apply border border-line rounded-lg bg-white p-5 shadow-card; }
+  .table-wrap { @apply overflow-x-auto border border-line rounded-lg bg-white shadow-card; }
+  .eyebrow { @apply text-xs font-semibold uppercase tracking-wide text-accenttext; }
+  .skeleton { @apply rounded bg-mist animate-pulse; }
+}
+
+/* Status chips. Colours always come with a text label, so meaning never depends on colour alone. */
+.status-verified { @apply bg-[#E4F3EA] text-verdigrisdark; }
+.status-changed { @apply bg-[#FEF0D9] text-[#8A4B08]; }
+.status-removed { @apply bg-[#FBE4E1] text-redsig; }
+.status-review { @apply bg-mist text-inksoft; }
+
+.sr-only-focusable:not(:focus) { @apply sr-only; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
